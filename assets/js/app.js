@@ -150,7 +150,7 @@ function checkAuthStatus() {
 // Role Guard
 function requireAuth(role = null) {
     const user = getUserData();
-    const isAdmin = window.location.pathname.includes('/admin/');
+    const isAdmin = window.location.pathname.includes('/');
     if (!user) {
         window.location.href = isAdmin ? '../login.html' : 'login.html';
         return false;
