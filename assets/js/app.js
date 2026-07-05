@@ -3,6 +3,7 @@
 const API_BASE_URL = 'https://cuplizz-space.my.id/api';
 const MIDTRANS_CLIENT_KEY = 'Mid-client-JhctP4gCknrcRODU'; // TODO: Update with real Midtrans client key if needed
 
+
 /**
  * ────────────────────────────────────────────────────────
  * 1. CORE API & AUTHENTICATION
@@ -33,10 +34,7 @@ async function apiRequest(endpoint, method = 'GET', data = null, isFormData = fa
     }
 
     try {
-const response = await fetch(`${API_BASE_URL}/categories`);
-
-const text = await response.text();
-console.log(text);
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
         
         // Handle no content
         if (response.status === 204) return true;
