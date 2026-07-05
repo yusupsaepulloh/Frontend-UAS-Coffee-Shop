@@ -4,7 +4,6 @@ const API_BASE_URL = 'https://cuplizz-space.my.id/api';
 const MIDTRANS_CLIENT_KEY = 'Mid-client-JhctP4gCknrcRODU'; // TODO: Update with real Midtrans client key if needed
 
 
-/**
  * ────────────────────────────────────────────────────────
  * 1. CORE API & AUTHENTICATION
  * ────────────────────────────────────────────────────────
@@ -65,7 +64,7 @@ function forceLogout() {
     localStorage.removeItem('user_data');
     // Deteksi apakah sedang di subfolder /admin/
     const isAdmin = window.location.pathname.includes('/admin/');
-    window.location.href = isAdmin ? '../login.html' : 'login.html';
+    window.location.href = isAdmin ? '/login.html' : 'login.html';
 }
 
 function confirmLogout() {
@@ -150,7 +149,7 @@ function checkAuthStatus() {
 // Role Guard
 function requireAuth(role = null) {
     const user = getUserData();
-    const isAdmin = window.location.pathname.includes('/');
+    const isAdmin = window.location.pathname.includes('/admin/');
     if (!user) {
         window.location.href = isAdmin ? '../login.html' : 'login.html';
         return false;
@@ -356,7 +355,7 @@ function buildAdminSidebar() {
                 <a href="../index.html" style="font-size:12.5px; color:#57534e;">
                     ← Website Utama
                 </a>
-                <a href="/login.html" class="danger" onclick="confirmLogout(); return false;" style="margin-top:4px;">
+                <a href="../login.html" class="danger" onclick="confirmLogout(); return false;" style="margin-top:4px;">
                     🚪 Logout
                 </a>
             </div>
