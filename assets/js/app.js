@@ -63,7 +63,7 @@ async function apiRequest(endpoint, method = 'GET', data = null, isFormData = fa
 function forceLogout() {
     localStorage.removeItem('api_token');
     localStorage.removeItem('user_data');
-    window.location.href = '/login.html';
+    window.location.href = '../../login.html';
 }
 
 function confirmLogout() {
