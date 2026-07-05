@@ -4,45 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelola Kategori - Admin Cuplizz Coffee</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="admin-layout">
         <div id="sidebar-container"></div>
-        
+
         <div class="admin-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2>Kelola Data Kategori</h2>
-                <button class="btn btn-primary" onclick="showModal()">+ Tambah Kategori</button>
+            <div class="admin-page-header">
+                <h2>Kelola Kategori</h2>
+                <button class="btn btn-primary" onclick="showModal()" style="font-size:13px;">+ Tambah Kategori</button>
             </div>
-            
-            <div id="loading" class="text-center">Memuat kategori...</div>
-            <table id="cat-table" style="display:none; max-width: 600px;">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nama Kategori</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="cat-body">
-                </tbody>
-            </table>
+
+            <div id="loading" class="loading-indicator">
+                <div class="spinner"></div>
+                <span>Memuat kategori...</span>
+            </div>
+
+            <div id="cat-wrapper" class="table-wrapper" style="display:none; max-width:560px;">
+                <table id="cat-table">
+                    <thead>
+                        <tr>
+                            <th style="width:60px;">ID</th>
+                            <th>Nama Kategori</th>
+                            <th style="width:140px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cat-body"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Modal Form -->
+    <!-- Modal Form Kategori -->
     <div id="cat-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="hideModal()">&times;</span>
-            <h3 id="modal-title" style="margin-bottom:15px;">Tambah Kategori</h3>
+        <div class="modal-content" style="max-width:400px;">
+            <button class="close" onclick="hideModal()">✕</button>
+            <h3 id="modal-title">Tambah Kategori</h3>
             <form id="cat-form">
                 <input type="hidden" id="cat_id">
                 <div class="form-group">
                     <label>Nama Kategori</label>
-                    <input type="text" id="name" required>
+                    <input type="text" id="name" required placeholder="Contoh: Kopi, Non-Kopi, Makanan">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width:100%" id="btn-save">Simpan</button>
+                <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; border-radius:12px;" id="btn-save">
+                    Simpan
+                </button>
             </form>
         </div>
     </div>
@@ -51,38 +61,39 @@
     <script src="../assets/js/app.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            if(!requireAuth('admin')) return;
+            if (!requireAuth('admin')) return;
             document.getElementById('sidebar-container').innerHTML = buildAdminSidebar();
             fetchCategories();
         });
 
         async function fetchCategories() {
             try {
-                const res = await apiRequest('/admin/categories'); // /api/admin/categories
+                const res = await apiRequest('/admin/categories');
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('cat-table').style.display = 'table';
-                
+                document.getElementById('cat-wrapper').style.display = 'block';
+
                 const tbody = document.getElementById('cat-body');
                 if (res.data && res.data.length > 0) {
-                    let html = '';
                     window.catData = res.data;
+                    let html = '';
                     res.data.forEach(c => {
                         html += `
                             <tr>
-                                <td>${c.id}</td>
-                                <td>${c.name}</td>
-                                <td>
-                                    <button class="btn btn-warning btn-small" style="background:#ffc107;" onclick="editCat(${c.id}, '${c.name}')">Edit</button>
+                                <td style="color:#78716c; font-size:12px;">${c.id}</td>
+                                <td style="font-weight:600;">${c.name}</td>
+                                <td style="white-space:nowrap;">
+                                    <button class="btn btn-warning btn-small" onclick="editCat(${c.id}, '${c.name}')" style="margin-right:6px;">Edit</button>
                                     <button class="btn btn-danger btn-small" onclick="deleteCat(${c.id})">Hapus</button>
                                 </td>
-                            </tr>
-                        `;
+                            </tr>`;
                     });
                     tbody.innerHTML = html;
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center">Belum ada kategori.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:40px;color:#78716c;">Belum ada kategori.</td></tr>';
                 }
-            } catch(e) { Swal.fire('Error', 'Gagal memuat: ' + e.message, 'error'); }
+            } catch(e) {
+                Swal.fire('Error', 'Gagal memuat: ' + e.message, 'error');
+            }
         }
 
         function showModal() {
@@ -98,7 +109,7 @@
 
         function editCat(id, name) {
             document.getElementById('cat_id').value = id;
-            document.getElementById('name').value = name;
+            document.getElementById('name').value   = name;
             document.getElementById('modal-title').textContent = 'Edit Kategori';
             document.getElementById('cat-modal').style.display = 'block';
         }
@@ -107,53 +118,54 @@
             e.preventDefault();
             const btn = document.getElementById('btn-save');
             btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
 
-            const id = document.getElementById('cat_id').value;
+            const id      = document.getElementById('cat_id').value;
             const payload = { name: document.getElementById('name').value };
 
             try {
                 if (id) {
                     await apiRequest(`/admin/categories/${id}`, 'PUT', payload);
                 } else {
-                    await apiRequest(`/admin/categories`, 'POST', payload);
+                    await apiRequest('/admin/categories', 'POST', payload);
                 }
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil',
-                    text: 'Kategori berhasil disimpan!',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
+                Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Kategori berhasil disimpan.', timer: 1500, showConfirmButton: false });
                 hideModal();
                 fetchCategories();
             } catch (error) {
                 Swal.fire('Gagal', error.message, 'error');
             } finally {
                 btn.disabled = false;
+                btn.textContent = 'Simpan';
             }
         });
 
         function deleteCat(id) {
             Swal.fire({
                 title: 'Hapus Kategori?',
-                text: "Data kategori ini tidak bisa dikembalikan!",
+                text: 'Data kategori tidak bisa dikembalikan!',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Hapus!'
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#78716c',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
                         await apiRequest(`/admin/categories/${id}`, 'DELETE');
                         Swal.fire('Terhapus!', 'Kategori berhasil dihapus.', 'success');
                         fetchCategories();
-                    } catch(e) { 
+                    } catch(e) {
                         Swal.fire('Gagal', e.message, 'error');
                     }
                 }
             });
         }
+
+        window.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('cat-modal')) hideModal();
+        });
     </script>
 </body>
 </html>

@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pesanan Saya - Cuplizz Coffee</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
     <script type="text/javascript"
             src="https://app.sandbox.midtrans.com/snap/snap.js"
@@ -12,43 +15,52 @@
 <body>
     <nav class="navbar">
         <div class="container nav-content">
-            <a href="index.html" class="logo">Cuplizz Coffee</a>
+            <a href="index.html" class="logo">☕ Cuplizz Coffee</a>
             <div class="nav-links">
                 <a href="index.html">Menu</a>
-                <a href="cart.html">Keranjang <span id="cart-badge" class="badge" style="display:none;">0</span></a>
+                <a href="cart.html">
+                    Keranjang
+                    <span id="cart-badge" class="badge" style="display:none;">0</span>
+                </a>
                 <span id="user-greeting"></span>
                 <a href="#" id="logout-btn" onclick="confirmLogout()">Logout</a>
             </div>
         </div>
     </nav>
 
-    <main class="container">
-        <section class="products-section">
+    <main>
+        <div class="page-section">
             <h2>Riwayat Pesanan Saya</h2>
-            <div id="loading" class="text-center">Memuat pesanan...</div>
-            <div id="error-msg" class="text-error text-center" style="display:none;"></div>
-            
-            <table id="orders-table" style="display:none;">
-                <thead>
-                    <tr>
-                        <th>Tgl Pesanan</th>
-                        <th>No. Order</th>
-                        <th>Total Belanja</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="orders-body">
-                </tbody>
-            </table>
-        </section>
+
+            <div id="loading" class="loading-indicator">
+                <div class="spinner"></div>
+                <span>Memuat pesanan...</span>
+            </div>
+
+            <div id="error-msg" class="text-error" style="display:none; margin-bottom:16px;"></div>
+
+            <div id="orders-wrapper" class="table-wrapper" style="display:none;">
+                <table id="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>No. Order</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-body"></tbody>
+                </table>
+            </div>
+        </div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="assets/js/app.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            if(!requireAuth('user')) return;
+            if (!requireAuth('user')) return;
             checkAuthStatus();
             fetchOrders();
         });
@@ -57,31 +69,38 @@
             try {
                 const response = await apiRequest('/orders/my');
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('orders-table').style.display = 'table';
-                
+                document.getElementById('orders-wrapper').style.display = 'block';
+
                 const tbody = document.getElementById('orders-body');
                 if (response.data && response.data.length > 0) {
                     let html = '';
                     response.data.forEach(order => {
-                        let actionBtn = '';
+                        let actionBtn = '-';
                         if (order.status === 'pending') {
-                            actionBtn += `<button class="btn btn-primary btn-small" onclick="paySnap('${order.snap_token}')" style="margin-right:5px;">Bayar</button>`;
-                            actionBtn += `<button class="btn btn-danger btn-small" onclick="cancelOrder(${order.id})">Batalkan</button>`;
+                            actionBtn = `
+                                <button class="btn btn-primary btn-small" onclick="paySnap('${order.snap_token}')" style="margin-right:6px;">Bayar</button>
+                                <button class="btn btn-danger btn-small" onclick="cancelOrder(${order.id})">Batalkan</button>`;
                         }
-                        
                         html += `
                             <tr>
-                                <td>${order.created_at}</td>
-                                <td>${order.order_number}</td>
-                                <td>Rp ${formatRupiah(order.total_amount)}</td>
+                                <td style="color:#78716c; font-size:12.5px;">${order.created_at}</td>
+                                <td style="font-weight:600;">${order.order_number}</td>
+                                <td style="font-weight:700; color:var(--primary);">Rp ${formatRupiah(order.total_amount)}</td>
                                 <td><span class="status-badge status-${order.status}">${order.status_label || order.status}</span></td>
-                                <td>${actionBtn || '-'}</td>
-                            </tr>
-                        `;
+                                <td>${actionBtn}</td>
+                            </tr>`;
                     });
                     tbody.innerHTML = html;
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">Belum ada pesanan.</td></tr>';
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding:48px 16px; color:#78716c;">
+                                <div style="font-size:36px; margin-bottom:8px;">📋</div>
+                                <div style="font-weight:600;">Belum ada pesanan</div>
+                                <div style="font-size:12px; margin-top:4px;">Yuk, pesan menu favoritmu sekarang!</div>
+                                <a href="index.html" class="btn btn-primary" style="margin-top:16px; padding:9px 20px; font-size:13px;">Lihat Menu</a>
+                            </td>
+                        </tr>`;
                 }
             } catch (error) {
                 document.getElementById('loading').style.display = 'none';
@@ -96,20 +115,21 @@
             window.snap.pay(token, {
                 onSuccess: () => window.location.reload(),
                 onPending: () => window.location.reload(),
-                onError: () => Swal.fire('Error', 'Pembayaran gagal!', 'error'),
-                onClose: () => window.location.reload(),
+                onError:   () => Swal.fire('Error', 'Pembayaran gagal!', 'error'),
+                onClose:   () => window.location.reload(),
             });
         }
 
         function cancelOrder(id) {
             Swal.fire({
                 title: 'Batalkan Pesanan?',
-                text: "Anda yakin ingin membatalkan pesanan ini?",
+                text: 'Anda yakin ingin membatalkan pesanan ini?',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, Batalkan!'
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#78716c',
+                confirmButtonText: 'Ya, Batalkan!',
+                cancelButtonText: 'Tidak'
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {

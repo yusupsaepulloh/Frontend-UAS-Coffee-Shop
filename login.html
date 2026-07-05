@@ -4,49 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Cuplizz Coffee</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
     <nav class="navbar">
         <div class="container nav-content">
-            <a href="index.html" class="logo">Cuplizz Coffee</a>
+            <a href="index.html" class="logo">☕ Cuplizz Coffee</a>
             <div class="nav-links">
                 <a href="index.html">Menu</a>
+                <a href="register.html" style="background:var(--primary);color:white;padding:7px 16px;border-radius:8px;">Daftar</a>
             </div>
         </div>
     </nav>
 
-    <main class="container">
+    <div class="auth-wrapper">
         <div class="auth-card">
-            <h2 class="text-center">Login Akun</h2>
-            <div id="login-error" class="text-error text-center" style="display:none; margin-bottom:15px;"></div>
-            
+            <div class="brand-icon">☕</div>
+            <h2>Selamat Datang</h2>
+            <p class="subtitle">Masuk ke akun Cuplizz Coffee kamu</p>
+
+            <div id="login-error" class="text-error" style="display:none; margin-bottom:16px;"></div>
+
             <form id="login-form">
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" required placeholder="admin@gmail.com">
+                    <input type="email" id="email" required placeholder="contoh@email.com" autocomplete="email">
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="12345678">
+                    <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width:100%">Masuk</button>
+                <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; font-size:15px; border-radius:12px; margin-top:4px;">
+                    Masuk
+                </button>
             </form>
+
+            <p style="text-align:center; margin-top:20px; font-size:13px; color:#78716c;">
+                Belum punya akun?
+                <a href="register.html" style="color:var(--primary); font-weight:600;">Daftar sekarang</a>
+            </p>
         </div>
-    </main>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="assets/js/app.js"></script>
     <script>
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            const email = document.getElementById('email').value;
+            const btn = e.submitter;
+            btn.disabled = true;
+            btn.textContent = 'Memproses...';
+
+            const email    = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            
-            login(email, password);
+
+            login(email, password).finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Masuk';
+            });
         });
 
-        // Redirect jika sudah login
         document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('api_token')) {
                 window.location.href = 'index.html';

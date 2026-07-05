@@ -4,52 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kelola Pesanan - Admin Cuplizz Coffee</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body>
     <div class="admin-layout">
         <div id="sidebar-container"></div>
-        
+
         <div class="admin-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2>Kelola Pesanan Masuk</h2>
+            <div class="admin-page-header">
+                <h2>Kelola Pesanan</h2>
             </div>
-            
-            <div id="loading" class="text-center">Memuat pesanan...</div>
-            <table id="orders-table" style="display:none;">
-                <thead>
-                    <tr>
-                        <th>Tgl</th>
-                        <th>No. Order</th>
-                        <th>Pelanggan</th>
-                        <th>Meja</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Aksi Update</th>
-                    </tr>
-                </thead>
-                <tbody id="orders-body">
-                </tbody>
-            </table>
+
+            <div id="loading" class="loading-indicator">
+                <div class="spinner"></div>
+                <span>Memuat pesanan...</span>
+            </div>
+
+            <div id="orders-wrapper" class="table-wrapper" style="display:none;">
+                <table id="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>No. Order</th>
+                            <th>Pelanggan</th>
+                            <th>Meja</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-body"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Modal Status -->
+    <!-- Modal Update Status -->
     <div id="status-modal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="hideModal()">&times;</span>
-            <h3 style="margin-bottom:15px;">Update Status Pesanan</h3>
+        <div class="modal-content" style="max-width:400px;">
+            <button class="close" onclick="hideModal()">✕</button>
+            <h3>Update Status Pesanan</h3>
             <form id="status-form">
                 <input type="hidden" id="order_id">
                 <div class="form-group">
                     <label>Ubah ke Status:</label>
                     <select id="new_status" required>
-                        <option value="processing">Processing (Sedang Diproses)</option>
-                        <option value="completed">Completed (Selesai)</option>
-                        <option value="cancelled">Cancelled (Dibatalkan)</option>
+                        <option value="processing">🔄 Processing (Sedang Diproses)</option>
+                        <option value="completed">✅ Completed (Selesai)</option>
+                        <option value="cancelled">❌ Cancelled (Dibatalkan)</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width:100%" id="btn-save">Update</button>
+                <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; border-radius:12px;" id="btn-save">
+                    Update Status
+                </button>
             </form>
         </div>
     </div>
@@ -58,40 +68,41 @@
     <script src="../assets/js/app.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            if(!requireAuth('admin')) return;
+            if (!requireAuth('admin')) return;
             document.getElementById('sidebar-container').innerHTML = buildAdminSidebar();
             fetchOrders();
         });
 
         async function fetchOrders() {
             try {
-                const res = await apiRequest('/admin/orders'); 
+                const res = await apiRequest('/admin/orders');
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('orders-table').style.display = 'table';
-                
+                document.getElementById('orders-wrapper').style.display = 'block';
+
                 const tbody = document.getElementById('orders-body');
                 if (res.data && res.data.length > 0) {
                     let html = '';
                     res.data.forEach(o => {
                         html += `
                             <tr>
-                                <td>${o.created_at}</td>
-                                <td>${o.order_number}</td>
+                                <td style="color:#78716c; font-size:12.5px;">${o.created_at}</td>
+                                <td style="font-weight:600;">${o.order_number}</td>
                                 <td>${o.customer_name}</td>
-                                <td>${o.table_number || '-'}</td>
-                                <td>Rp ${formatRupiah(o.total_amount)}</td>
+                                <td style="color:#78716c;">${o.table_number || '-'}</td>
+                                <td style="font-weight:700; color:var(--primary);">Rp ${formatRupiah(o.total_amount)}</td>
                                 <td><span class="status-badge status-${o.status}">${o.status_label || o.status}</span></td>
                                 <td>
-                                    <button class="btn btn-warning btn-small" style="background:#ffc107;" onclick="showStatusModal(${o.id})">Update Status</button>
+                                    <button class="btn btn-warning btn-small" onclick="showStatusModal(${o.id})">Update</button>
                                 </td>
-                            </tr>
-                        `;
+                            </tr>`;
                     });
                     tbody.innerHTML = html;
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Belum ada pesanan aktif.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#78716c;">Belum ada pesanan aktif.</td></tr>';
                 }
-            } catch(e) { Swal.fire('Error', 'Gagal memuat: ' + e.message, 'error'); }
+            } catch(e) {
+                Swal.fire('Error', 'Gagal memuat: ' + e.message, 'error');
+            }
         }
 
         function showStatusModal(id) {
@@ -107,26 +118,26 @@
             e.preventDefault();
             const btn = document.getElementById('btn-save');
             btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
 
-            const id = document.getElementById('order_id').value;
+            const id      = document.getElementById('order_id').value;
             const payload = { status: document.getElementById('new_status').value };
 
             try {
                 await apiRequest(`/admin/orders/${id}/status`, 'PATCH', payload);
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil',
-                    text: 'Status pesanan berhasil diupdate!',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
+                Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Status pesanan berhasil diupdate.', timer: 1500, showConfirmButton: false });
                 hideModal();
                 fetchOrders();
             } catch (error) {
                 Swal.fire('Gagal', error.message, 'error');
             } finally {
                 btn.disabled = false;
+                btn.textContent = 'Update Status';
             }
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('status-modal')) hideModal();
         });
     </script>
 </body>

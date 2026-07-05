@@ -4,46 +4,220 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cuplizz Coffee - Frontend API</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    
+    <!-- Google Fonts: Plus Jakarta Sans untuk kesan modern & premium -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        a, button { transition: all 0.2s ease-in-out; }
+
+        /* ── Product Card – override Tailwind preflight ── */
+        .product-card {
+            background: #fff;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid #e7e5e4;
+            box-shadow: 0 2px 10px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.03);
+            display: flex;
+            flex-direction: column;
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 14px 36px rgba(0,0,0,.13), 0 2px 8px rgba(0,0,0,.06);
+        }
+        .product-img {
+            width: 100%; height: 190px;
+            object-fit: cover; display: block;
+        }
+        .product-info {
+            padding: 14px 16px 16px;
+            flex: 1; display: flex; flex-direction: column;
+        }
+        .category-badge {
+            display: inline-flex; align-self: flex-start;
+            align-items: center;
+            background: #fef3c7; color: #92400e;
+            font-size: 10.5px; font-weight: 700;
+            letter-spacing: .04em; text-transform: uppercase;
+            padding: 3px 9px; border-radius: 20px;
+            margin-bottom: 7px;
+            white-space: nowrap; max-width: 100%;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .product-title {
+            font-size: 14.5px; font-weight: 700;
+            color: #1c1917; line-height: 1.35;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            line-clamp: 2;
+            overflow: hidden;
+        }
+        .product-desc {
+            font-size: 12px; color: #78716c;
+            line-height: 1.5; margin-bottom: 10px;
+            flex: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            line-clamp: 2;
+            overflow: hidden;
+        }
+        .product-price {
+            font-size: 16px; font-weight: 800;
+            color: #d97706; margin-bottom: 12px;
+            letter-spacing: -0.01em;
+        }
+        .btn-add-cart {
+            display: block; width: 100%;
+            padding: 10px 14px;
+            background: #d97706; color: #fff;
+            border: none; border-radius: 10px;
+            font-size: 13px; font-weight: 700;
+            font-family: inherit; cursor: pointer;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(217,119,6,.35);
+            transition: background .2s ease, transform .15s ease, box-shadow .2s ease;
+            margin-top: auto;
+        }
+        .btn-add-cart:hover {
+            background: #b45309;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(217,119,6,.45);
+        }
+        .btn-add-cart:active { transform: scale(.97); }
+
+        /* ── Category Filter Buttons ── */
+        .btn-filter {
+            padding: 7px 16px;
+            background: #fff;
+            border: 1.5px solid #d6d3d1;
+            color: #57534e;
+            border-radius: 20px;
+            font-size: 12px; font-weight: 600;
+            font-family: inherit; cursor: pointer;
+            transition: all .2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,.06);
+        }
+        .btn-filter:hover {
+            border-color: #d97706; color: #d97706;
+            background: #fffbeb;
+        }
+        .btn-filter.active {
+            background: #d97706; border-color: #d97706;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(217,119,6,.35);
+        }
+    </style>
 </head>
-<body>
-    <nav class="navbar">
-        <div class="container nav-content">
-            <a href="index.html" class="logo">Cuplizz Coffee</a>
-            <div class="nav-links">
-                <a href="index.html">Menu</a>
-                <a href="cart.html">Keranjang <span id="cart-badge" class="badge" style="display:none;">0</span></a>
-                <a href="my-orders.html" id="orders-link" style="display:none;">Pesanan Saya</a>
-                <a href="admin/index.html" id="admin-link" style="display:none;">Panel Admin</a>
-                <a href="login.html" id="auth-link">Login</a>
-                <a href="register.html" id="auth-link">Register</a>
-                <span id="user-greeting" style="display:none;"></span>
-                <a href="#" id="logout-btn" style="display:none;" onclick="confirmLogout()">Logout</a>
+<body class="bg-stone-50 text-stone-900 min-h-screen flex flex-col antialiased">
+
+    <!-- NAVBAR (Tema Gelap Premium) -->
+    <nav class="bg-stone-950 text-stone-100 sticky top-0 z-50 shadow-md border-b border-stone-800">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <!-- Logo -->
+            <a href="index.html" class="text-lg font-bold tracking-tight text-amber-500 hover:text-amber-400 flex items-center gap-2">
+                ☕ Cuplizz Coffee
+            </a>
+            
+            <!-- Nav Links -->
+            <div class="nav-links flex items-center gap-5 text-sm font-medium text-stone-300">
+                <a href="index.html" class="hover:text-amber-400">Menu</a>
+                
+                <a href="cart.html" class="hover:text-amber-400 flex items-center gap-1.5 bg-stone-900 border border-stone-800 px-3 py-1.5 rounded-xl text-xs">
+                    Keranjang
+                    <span id="cart-badge" class="bg-amber-500 text-stone-950 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="display:none;">0</span>
+                </a>
+                
+                <a href="my-orders.html" id="orders-link" class="hover:text-amber-400" style="display:none;">Pesanan Saya</a>
+                <a href="admin/index.html" id="admin-link" class="text-amber-400 font-semibold" style="display:none;">Panel Admin</a>
+                
+                <!-- Pembatas Ringan -->
+                <div class="h-4 w-px bg-stone-800 hidden sm:block"></div>
+                
+                <!-- Auth Links -->
+                <a href="login.html" id="auth-link" class="hover:text-amber-400">Login</a>
+                <a href="register.html" id="auth-link" class="bg-amber-500 hover:bg-amber-600 text-stone-950 px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-sm">Register</a>
+                
+                <!-- User Status -->
+                <span id="user-greeting" class="text-stone-400 text-xs bg-stone-900 px-3 py-1.5 rounded-xl border border-stone-800" style="display:none;"></span>
+                <a href="#" id="logout-btn" class="text-red-400 hover:text-red-300 text-xs" style="display:none;" onclick="confirmLogout()">Logout</a>
             </div>
         </div>
     </nav>
 
-    <main class="container">
-        <section class="hero">
-            <h1>Selamat Datang di Cuplizz Coffee</h1>
-            <p>Pilih menu favoritmu di bawah ini</p>
+    <!-- MAIN CONTENT -->
+    <main class="max-w-6xl mx-auto px-6 flex-grow w-full">
+        
+        <!-- HERO SECTION (Premium Dark Coffe-Shop Banner) -->
+        <section class="hero my-8 bg-gradient-to-br from-stone-900 via-stone-950 to-amber-950 text-stone-100 rounded-2xl py-12 px-6 sm:px-12 text-center shadow-lg border border-stone-800 relative overflow-hidden">
+            <div class="relative z-10 max-w-xl mx-auto">
+                <span class="inline-block bg-amber-500/10 text-amber-400 text-[11px] font-semibold tracking-wider uppercase px-3 py-1 rounded-full mb-3 border border-amber-500/20">
+                    Premium Espresso & Brew
+                </span>
+                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-3">
+                    Selamat Datang di <span class="text-amber-400">Cuplizz Coffee</span>
+                </h1>
+                <p class="text-stone-400 text-xs sm:text-sm font-light max-w-sm mx-auto leading-relaxed">
+                    Pilih menu favoritmu di bawah ini, diseduh langsung oleh barista berpengalaman untuk harimu.
+                </p>
+            </div>
         </section>
 
-        <section class="products-section">
-            <h2>Katalog Menu</h2>
+        <!-- PRODUCTS SECTION -->
+        <section class="products-section pb-16">
             
-            <div id="categories-container" class="category-filters text-center" style="margin-bottom: 30px;">
+            <!-- Controls Bar -->
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between pb-5 mb-8 gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-stone-900 tracking-tight flex items-center gap-2">
+                        <span class="w-1 h-5 bg-amber-500 rounded-full"></span>
+                        Katalog Menu
+                    </h2>
+                    <p class="text-xs text-stone-400 mt-1 ml-3">Pilih kategori untuk filter menu</p>
+                </div>
+                
                 <!-- Tombol Kategori -->
+                <div id="categories-container" class="category-filters flex flex-wrap gap-2">
+                </div>
             </div>
 
-            <div id="loading" class="text-center">Memuat data dari API...</div>
-            <div id="error-message" class="text-error text-center" style="display:none;"></div>
+            <!-- Loading State -->
+            <div id="loading" class="text-center py-16 text-stone-400 text-xs flex flex-col items-center justify-center gap-2.5">
+                <div class="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                <span class="font-medium tracking-wide">Memuat data dari API...</span>
+            </div>
             
-            <div id="products-container" class="products-grid">
+            <!-- Error State -->
+            <div id="error-message" class="text-red-600 bg-red-50 border border-red-100 rounded-xl p-4 text-center my-4 text-xs max-w-md mx-auto shadow-sm" style="display:none;"></div>
+            
+            <!-- Products Grid -->
+            <div id="products-container" class="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 <!-- Data produk dari API akan di-render di sini oleh JavaScript -->
             </div>
         </section>
     </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-stone-200 text-stone-400 text-center py-6 text-xs mt-auto">
+        <p>&copy; 2026 Cuplizz Coffee. All rights reserved.</p>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="assets/js/app.js"></script>

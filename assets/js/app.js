@@ -275,23 +275,22 @@ function renderProductsUI(products) {
     let html = '';
     
     products.forEach(product => {
-        const img = product.image_url ? product.image_url : 'https://via.placeholder.com/300x200?text=Kopi';
-        
+        const img = product.image_url ? product.image_url : 'https://via.placeholder.com/300x200?text=☕';
+
         let actionBtn = '';
         if (!isAdmin) {
-            actionBtn = `<button class="btn btn-primary" style="width:100%; margin-top:10px;" 
-                        onclick='addSpecificToCart(${product.id})'>
-                        Tambah ke Keranjang
-                    </button>`;
+            actionBtn = `<button class="btn-add-cart" onclick='addSpecificToCart(${product.id})'>
+                            + Tambah ke Keranjang
+                        </button>`;
         }
 
         html += `
             <div class="product-card">
-                <img src="${img}" alt="${product.name}" class="product-img">
+                <img src="${img}" alt="${product.name}" class="product-img" loading="lazy">
                 <div class="product-info">
-                    <span class="category-badge">${product.category?.name || '-'}</span>
+                    <span class="category-badge">${product.category?.name || 'Uncategorized'}</span>
                     <h3 class="product-title">${product.name}</h3>
-                    <p class="product-desc">${product.description || '-'}</p>
+                    <p class="product-desc">${product.description || 'Tidak ada deskripsi.'}</p>
                     <p class="product-price">Rp ${formatRupiah(product.price)}</p>
                     ${actionBtn}
                 </div>
@@ -330,16 +329,34 @@ function addSpecificToCart(id) {
  * ────────────────────────────────────────────────────────
  */
 function buildAdminSidebar() {
+    const path = window.location.pathname;
+    const active = (page) => path.includes(page) ? 'active' : '';
+
     return `
         <div class="admin-sidebar">
-            <h2 class="text-center" style="color:white; margin-bottom: 20px;">Admin Panel</h2>
-            <a href="index.html">Dashboard</a>
-            <a href="products.html">Data Produk</a>
-            <a href="categories.html">Data Kategori</a>
-            <a href="orders.html">Data Pesanan</a>
-            <a href="#" onclick="confirmLogout(); return false;" style="color:var(--danger); margin-top: 30px;">Logout</a>
-            <br>
-            <a href="../index.html" style="font-size:12px; color:#aaa;">&larr; Ke Website Utama</a>
+            <div class="sidebar-brand">☕ Cuplizz Admin</div>
+
+            <a href="index.html" class="${active('admin/index') || (path.endsWith('/admin/') ? 'active' : '')}">
+                📊 Dashboard
+            </a>
+            <a href="products.html" class="${active('products')}">
+                📦 Data Produk
+            </a>
+            <a href="categories.html" class="${active('categories')}">
+                🏷️ Data Kategori
+            </a>
+            <a href="orders.html" class="${active('orders')}">
+                🧾 Data Pesanan
+            </a>
+
+            <div class="sidebar-footer">
+                <a href="../index.html" style="font-size:12.5px; color:#57534e;">
+                    ← Website Utama
+                </a>
+                <a href="#" class="danger" onclick="confirmLogout(); return false;" style="margin-top:4px;">
+                    🚪 Logout
+                </a>
+            </div>
         </div>
     `;
 }
