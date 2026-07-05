@@ -356,7 +356,7 @@ function buildAdminSidebar() {
                 <a href="../index.html" style="font-size:12.5px; color:#57534e;">
                     ← Website Utama
                 </a>
-                <a href="#" class="danger" onclick="confirmLogout(); return false;" style="margin-top:4px;">
+                <a href="/login.html" class="danger" onclick="confirmLogout(); return false;" style="margin-top:4px;">
                     🚪 Logout
                 </a>
             </div>
