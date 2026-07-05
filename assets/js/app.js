@@ -63,7 +63,9 @@ async function apiRequest(endpoint, method = 'GET', data = null, isFormData = fa
 function forceLogout() {
     localStorage.removeItem('api_token');
     localStorage.removeItem('user_data');
-    window.location.href = 'login.html';
+    // Deteksi apakah sedang di subfolder /admin/
+    const isAdmin = window.location.pathname.includes('/admin/');
+    window.location.href = isAdmin ? '../login.html' : 'login.html';
 }
 
 function confirmLogout() {
@@ -148,8 +150,9 @@ function checkAuthStatus() {
 // Role Guard
 function requireAuth(role = null) {
     const user = getUserData();
+    const isAdmin = window.location.pathname.includes('/admin/');
     if (!user) {
-        window.location.href = 'login.html';
+        window.location.href = isAdmin ? '../login.html' : 'login.html';
         return false;
     }
     if (role && user.role !== role) {
@@ -159,7 +162,7 @@ function requireAuth(role = null) {
             text: 'Anda tidak memiliki izin untuk halaman ini.',
             confirmButtonColor: '#d2691e'
         }).then(() => {
-            window.location.href = 'index.html';
+            window.location.href = isAdmin ? '../index.html' : 'index.html';
         });
         return false;
     }
