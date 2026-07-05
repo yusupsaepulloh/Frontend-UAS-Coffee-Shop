@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keranjang - Cuplizz Coffee</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script type="text/javascript"
+            src="https://app.sandbox.midtrans.com/snap/snap.js"
+            data-client-key="SB-Mid-client-XXXX"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="index.html" class="logo">Cuplizz Coffee</a>
+            <div class="nav-links">
+                <a href="index.html">Menu</a>
+                <a href="my-orders.html">Pesanan Saya</a>
+                <span id="user-greeting"></span>
+                <a href="#" id="logout-btn" onclick="confirmLogout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="products-section">
+            <h2>Keranjang Belanja</h2>
+            <div id="cart-error" class="text-error text-center" style="display:none; margin-bottom:15px;"></div>
+            
+            <div style="display: flex; gap: 30px;">
+                <div style="flex: 2;">
+                    <table id="cart-table">
+                        <thead>
+                            <tr>
+                                <th>Produk</th>
+                                <th>Harga</th>
+                                <th>Qty</th>
+                                <th>Subtotal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-body">
+                            <!-- Items here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div style="flex: 1;" class="auth-card" style="margin:0;">
+                    <h3>Checkout</h3>
+                    <form id="checkout-form">
+                        <div class="form-group">
+                            <label>Nama Pelanggan</label>
+                            <input type="text" id="customer_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nomor Meja</label>
+                            <input type="text" id="table_number" required>
+                        </div>
+                        <h3 style="margin:20px 0;">Total: <span id="cart-total" style="color:var(--primary-color);">Rp 0</span></h3>
+                        <button type="submit" class="btn btn-primary" style="width:100%" id="btn-checkout">Bayar Sekarang</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="assets/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if(!requireAuth('user')) return;
+            checkAuthStatus();
+            
+            const user = getUserData();
+            if(user) document.getElementById('customer_name').value = user.name;
+            
+            renderCart();
+        });
+
+        function renderCart() {
+            const cart = getCart();
+            const tbody = document.getElementById('cart-body');
+            
+            if (cart.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Keranjang kosong.</td></tr>';
+                document.getElementById('cart-total').textContent = 'Rp 0';
+                document.getElementById('btn-checkout').disabled = true;
+                return;
+            }
+            
+            document.getElementById('btn-checkout').disabled = false;
+            let html = '';
+            let subtotal = 0;
+            
+            cart.forEach((item, index) => {
+                const itemSub = item.price * item.qty;
+                subtotal += itemSub;
+                
+                html += `
+                    <tr>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <img src="${item.image || 'https://via.placeholder.com/50'}" style="width:50px; height:50px; object-fit:cover;">
+                                ${item.name}
+                            </div>
+                        </td>
+                        <td>Rp ${formatRupiah(item.price)}</td>
+                        <td>
+                            <input type="number" min="1" value="${item.qty}" style="width:60px;" 
+                                onchange="updateQty(${index}, this.value)">
+                        </td>
+                        <td>Rp ${formatRupiah(itemSub)}</td>
+                        <td><button class="btn btn-danger btn-small" onclick="removeItem(${index})">Hapus</button></td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+            const grandTotal = subtotal;
+            document.getElementById('cart-total').textContent = `Rp ${formatRupiah(grandTotal)}`;
+        }
+
+        function updateQty(index, qty) {
+            const cart = getCart();
+            cart[index].qty = parseInt(qty) || 1;
+            saveCart(cart);
+            renderCart();
+        }
+
+        function removeItem(index) {
+            const cart = getCart();
+            cart.splice(index, 1);
+            saveCart(cart);
+            renderCart();
+        }
+
+        document.getElementById('checkout-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const cart = getCart();
+            
+            const payload = {
+                customer_name: document.getElementById('customer_name').value,
+                table_number: document.getElementById('table_number').value,
+                items: cart.map(item => ({ id: item.id, qty: item.qty }))
+            };
+            
+            const btn = document.getElementById('btn-checkout');
+            btn.disabled = true;
+            btn.textContent = 'Memproses...';
+            
+            try {
+                const response = await apiRequest('/orders/checkout', 'POST', payload);
+                if (response.success && response.snap_token) {
+                    saveCart([]); // Kosongkan keranjang
+                    
+                    window.snap.pay(response.snap_token, {
+                        onSuccess: function(result){
+                            window.location.href = 'my-orders.html';
+                        },
+                        onPending: function(result){
+                            window.location.href = 'my-orders.html';
+                        },
+                        onError: function(result){
+                            Swal.fire('Error', 'Pembayaran gagal!', 'error');
+                        },
+                        onClose: function(){
+                            window.location.href = 'my-orders.html';
+                        }
+                    });
+                }
+            } catch (error) {
+                const errorDiv = document.getElementById('cart-error');
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = error.message;
+                btn.disabled = false;
+                btn.textContent = 'Bayar Sekarang';
+            }
+        });
+    </script>
+</body>
+</html>

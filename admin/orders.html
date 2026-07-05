@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Pesanan - Admin Cuplizz Coffee</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <div id="sidebar-container"></div>
+        
+        <div class="admin-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>Kelola Pesanan Masuk</h2>
+            </div>
+            
+            <div id="loading" class="text-center">Memuat pesanan...</div>
+            <table id="orders-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Tgl</th>
+                        <th>No. Order</th>
+                        <th>Pelanggan</th>
+                        <th>Meja</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Aksi Update</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Status -->
+    <div id="status-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="hideModal()">&times;</span>
+            <h3 style="margin-bottom:15px;">Update Status Pesanan</h3>
+            <form id="status-form">
+                <input type="hidden" id="order_id">
+                <div class="form-group">
+                    <label>Ubah ke Status:</label>
+                    <select id="new_status" required>
+                        <option value="processing">Processing (Sedang Diproses)</option>
+                        <option value="completed">Completed (Selesai)</option>
+                        <option value="cancelled">Cancelled (Dibatalkan)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%" id="btn-save">Update</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if(!requireAuth('admin')) return;
+            document.getElementById('sidebar-container').innerHTML = buildAdminSidebar();
+            fetchOrders();
+        });
+
+        async function fetchOrders() {
+            try {
+                const res = await apiRequest('/admin/orders'); 
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('orders-table').style.display = 'table';
+                
+                const tbody = document.getElementById('orders-body');
+                if (res.data && res.data.length > 0) {
+                    let html = '';
+                    res.data.forEach(o => {
+                        html += `
+                            <tr>
+                                <td>${o.created_at}</td>
+                                <td>${o.order_number}</td>
+                                <td>${o.customer_name}</td>
+                                <td>${o.table_number || '-'}</td>
+                                <td>Rp ${formatRupiah(o.total_amount)}</td>
+                                <td><span class="status-badge status-${o.status}">${o.status_label || o.status}</span></td>
+                                <td>
+                                    <button class="btn btn-warning btn-small" style="background:#ffc107;" onclick="showStatusModal(${o.id})">Update Status</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">Belum ada pesanan aktif.</td></tr>';
+                }
+            } catch(e) { Swal.fire('Error', 'Gagal memuat: ' + e.message, 'error'); }
+        }
+
+        function showStatusModal(id) {
+            document.getElementById('order_id').value = id;
+            document.getElementById('status-modal').style.display = 'block';
+        }
+
+        function hideModal() {
+            document.getElementById('status-modal').style.display = 'none';
+        }
+
+        document.getElementById('status-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+
+            const id = document.getElementById('order_id').value;
+            const payload = { status: document.getElementById('new_status').value };
+
+            try {
+                await apiRequest(`/admin/orders/${id}/status`, 'PATCH', payload);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Status pesanan berhasil diupdate!',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                hideModal();
+                fetchOrders();
+            } catch (error) {
+                Swal.fire('Gagal', error.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

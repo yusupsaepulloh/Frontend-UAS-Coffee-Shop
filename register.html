@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Cuplizz Coffee</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="index.html" class="logo">Cuplizz Coffee</a>
+            <div class="nav-links">
+                <a href="index.html">Menu</a>
+                <a href="login.html">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="auth-card">
+            <h2 class="text-center">Daftar Akun Baru</h2>
+            <div id="register-error" class="text-error text-center" style="display:none; margin-bottom:15px;"></div>
+            
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="name">Nama Lengkap</label>
+                    <input type="text" id="name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Minimal 6 karakter">
+                </div>
+                <div class="form-group">
+                    <label for="password_confirmation">Konfirmasi Password</label>
+                    <input type="password" id="password_confirmation" required placeholder="Ulangi password">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Daftar</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="assets/js/app.js"></script>
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const password_confirmation = document.getElementById('password_confirmation').value;
+            
+            const errorDiv = document.getElementById('register-error');
+            errorDiv.style.display = 'none';
+
+            try {
+                const response = await apiRequest('/auth/register', 'POST', {
+                    name, email, password, password_confirmation
+                });
+                
+                if (response.success && response.token) {
+                    localStorage.setItem('api_token', response.token);
+                    localStorage.setItem('user_data', JSON.stringify(response.user));
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = error.message;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('api_token')) {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>

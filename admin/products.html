@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Produk - Admin Cuplizz Coffee</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <div id="sidebar-container"></div>
+        
+        <div class="admin-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>Kelola Data Produk</h2>
+                <button class="btn btn-primary" onclick="showModal()">+ Tambah Produk</button>
+            </div>
+            
+            <div id="loading" class="text-center">Memuat produk...</div>
+            <table id="products-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Gambar</th>
+                        <th>Kategori</th>
+                        <th>Nama Produk</th>
+                        <th>Harga</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="products-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="hideModal()">&times;</span>
+            <h3 id="modal-title" style="margin-bottom:15px;">Tambah Produk</h3>
+            <form id="product-form">
+                <input type="hidden" id="product_id">
+                <div class="form-group">
+                    <label>Nama Produk</label>
+                    <input type="text" id="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Kategori</label>
+                    <select id="category_id" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Harga</label>
+                    <input type="number" id="price" required min="0">
+                </div>
+                <div class="form-group">
+                    <label>Deskripsi</label>
+                    <textarea id="description" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Status Ketersediaan</label>
+                    <select id="is_available">
+                        <option value="1">Tersedia</option>
+                        <option value="0">Habis / Tidak Aktif</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Gambar (Opsional)</label>
+                    <input type="file" id="image" accept="image/*">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%" id="btn-save">Simpan</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if(!requireAuth('admin')) return;
+            document.getElementById('sidebar-container').innerHTML = buildAdminSidebar();
+            fetchCategories();
+            fetchProducts();
+        });
+
+        async function fetchCategories() {
+            try {
+                const res = await apiRequest('/categories');
+                let html = '<option value="">-- Pilih Kategori --</option>';
+                res.data.forEach(c => { html += `<option value="${c.id}">${c.name}</option>`; });
+                document.getElementById('category_id').innerHTML = html;
+            } catch(e) { console.error('Gagal memuat kategori'); }
+        }
+
+        async function fetchProducts() {
+            try {
+                const response = await apiRequest('/admin/products');
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('products-table').style.display = 'table';
+                
+                const tbody = document.getElementById('products-body');
+                if (response.data && response.data.length > 0) {
+                    let html = '';
+                    // Simpan data global untuk akses edit
+                    window.productsData = response.data;
+                    
+                    response.data.forEach(p => {
+                        const img = p.image_url ? `<img src="${p.image_url}" style="width:50px; height:50px; object-fit:cover;">` : '-';
+                        const status = p.is_available ? '<span class="status-badge status-completed">Tersedia</span>' : '<span class="status-badge status-cancelled">Habis</span>';
+                        html += `
+                            <tr>
+                                <td>${img}</td>
+                                <td>${p.category?.name || '-'}</td>
+                                <td>${p.name}</td>
+                                <td>Rp ${formatRupiah(p.price)}</td>
+                                <td>${status}</td>
+                                <td>
+                                    <button class="btn btn-warning btn-small" style="background:#ffc107;" onclick="editProduct(${p.id})">Edit</button>
+                                    <button class="btn btn-danger btn-small" onclick="deleteProduct(${p.id})">Hapus</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada data produk.</td></tr>';
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Gagal memuat produk: ' + error.message, 'error');
+            }
+        }
+
+        function showModal() {
+            document.getElementById('product-form').reset();
+            document.getElementById('product_id').value = '';
+            document.getElementById('modal-title').textContent = 'Tambah Produk';
+            document.getElementById('product-modal').style.display = 'block';
+        }
+
+        function hideModal() {
+            document.getElementById('product-modal').style.display = 'none';
+        }
+
+        function editProduct(id) {
+            const p = window.productsData.find(x => x.id === id);
+            if(!p) return;
+            
+            document.getElementById('product_id').value = p.id;
+            document.getElementById('name').value = p.name;
+            document.getElementById('category_id').value = p.category?.id || '';
+            document.getElementById('price').value = p.price;
+            document.getElementById('description').value = p.description;
+            document.getElementById('is_available').value = p.is_available ? "1" : "0";
+            
+            document.getElementById('modal-title').textContent = 'Edit Produk';
+            document.getElementById('product-modal').style.display = 'block';
+        }
+
+        document.getElementById('product-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
+
+            const id = document.getElementById('product_id').value;
+            
+            // Kita pakai form data karena ada upload file
+            const formData = new FormData();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('category_id', document.getElementById('category_id').value);
+            formData.append('price', document.getElementById('price').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('is_available', document.getElementById('is_available').value);
+            
+            const fileInput = document.getElementById('image');
+            if(fileInput.files.length > 0) {
+                formData.append('image', fileInput.files[0]);
+            }
+
+            try {
+                // Jika Edit (PUT request di Laravel dengan form data butuh _method=PUT)
+                let endpoint = '/admin/products';
+                let method = 'POST'; // Form data selalu dikirim post di Fetch native
+                
+                if (id) {
+                    endpoint = `/admin/products/${id}`;
+                    formData.append('_method', 'PUT'); // Trick for Laravel
+                }
+
+                // Kirim request khusus Form Data
+                const token = localStorage.getItem('api_token');
+                const response = await fetch(API_BASE_URL + endpoint, {
+                    method: method,
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                
+                const res = await response.json();
+                if(!response.ok) throw new Error(res.message);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: id ? 'Produk berhasil diupdate!' : 'Produk berhasil ditambahkan!',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                hideModal();
+                fetchProducts();
+            } catch (error) {
+                Swal.fire('Gagal', 'Gagal menyimpan: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Simpan';
+            }
+        });
+
+        function deleteProduct(id) {
+            Swal.fire({
+                title: 'Hapus Produk?',
+                text: "Data produk ini tidak bisa dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await apiRequest(`/admin/products/${id}`, 'DELETE');
+                        Swal.fire('Terhapus!', 'Produk berhasil dihapus.', 'success');
+                        fetchProducts();
+                    } catch(e) { 
+                        Swal.fire('Gagal', e.message, 'error');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

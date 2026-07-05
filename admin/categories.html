@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Kategori - Admin Cuplizz Coffee</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <div id="sidebar-container"></div>
+        
+        <div class="admin-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>Kelola Data Kategori</h2>
+                <button class="btn btn-primary" onclick="showModal()">+ Tambah Kategori</button>
+            </div>
+            
+            <div id="loading" class="text-center">Memuat kategori...</div>
+            <table id="cat-table" style="display:none; max-width: 600px;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nama Kategori</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="cat-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="cat-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="hideModal()">&times;</span>
+            <h3 id="modal-title" style="margin-bottom:15px;">Tambah Kategori</h3>
+            <form id="cat-form">
+                <input type="hidden" id="cat_id">
+                <div class="form-group">
+                    <label>Nama Kategori</label>
+                    <input type="text" id="name" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%" id="btn-save">Simpan</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if(!requireAuth('admin')) return;
+            document.getElementById('sidebar-container').innerHTML = buildAdminSidebar();
+            fetchCategories();
+        });
+
+        async function fetchCategories() {
+            try {
+                const res = await apiRequest('/admin/categories'); // /api/admin/categories
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('cat-table').style.display = 'table';
+                
+                const tbody = document.getElementById('cat-body');
+                if (res.data && res.data.length > 0) {
+                    let html = '';
+                    window.catData = res.data;
+                    res.data.forEach(c => {
+                        html += `
+                            <tr>
+                                <td>${c.id}</td>
+                                <td>${c.name}</td>
+                                <td>
+                                    <button class="btn btn-warning btn-small" style="background:#ffc107;" onclick="editCat(${c.id}, '${c.name}')">Edit</button>
+                                    <button class="btn btn-danger btn-small" onclick="deleteCat(${c.id})">Hapus</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center">Belum ada kategori.</td></tr>';
+                }
+            } catch(e) { Swal.fire('Error', 'Gagal memuat: ' + e.message, 'error'); }
+        }
+
+        function showModal() {
+            document.getElementById('cat-form').reset();
+            document.getElementById('cat_id').value = '';
+            document.getElementById('modal-title').textContent = 'Tambah Kategori';
+            document.getElementById('cat-modal').style.display = 'block';
+        }
+
+        function hideModal() {
+            document.getElementById('cat-modal').style.display = 'none';
+        }
+
+        function editCat(id, name) {
+            document.getElementById('cat_id').value = id;
+            document.getElementById('name').value = name;
+            document.getElementById('modal-title').textContent = 'Edit Kategori';
+            document.getElementById('cat-modal').style.display = 'block';
+        }
+
+        document.getElementById('cat-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+
+            const id = document.getElementById('cat_id').value;
+            const payload = { name: document.getElementById('name').value };
+
+            try {
+                if (id) {
+                    await apiRequest(`/admin/categories/${id}`, 'PUT', payload);
+                } else {
+                    await apiRequest(`/admin/categories`, 'POST', payload);
+                }
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Kategori berhasil disimpan!',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                hideModal();
+                fetchCategories();
+            } catch (error) {
+                Swal.fire('Gagal', error.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        function deleteCat(id) {
+            Swal.fire({
+                title: 'Hapus Kategori?',
+                text: "Data kategori ini tidak bisa dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await apiRequest(`/admin/categories/${id}`, 'DELETE');
+                        Swal.fire('Terhapus!', 'Kategori berhasil dihapus.', 'success');
+                        fetchCategories();
+                    } catch(e) { 
+                        Swal.fire('Gagal', e.message, 'error');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

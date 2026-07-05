@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesanan Saya - Cuplizz Coffee</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script type="text/javascript"
+            src="https://app.sandbox.midtrans.com/snap/snap.js"
+            data-client-key="SB-Mid-client-XXXX"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-content">
+            <a href="index.html" class="logo">Cuplizz Coffee</a>
+            <div class="nav-links">
+                <a href="index.html">Menu</a>
+                <a href="cart.html">Keranjang <span id="cart-badge" class="badge" style="display:none;">0</span></a>
+                <span id="user-greeting"></span>
+                <a href="#" id="logout-btn" onclick="confirmLogout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="products-section">
+            <h2>Riwayat Pesanan Saya</h2>
+            <div id="loading" class="text-center">Memuat pesanan...</div>
+            <div id="error-msg" class="text-error text-center" style="display:none;"></div>
+            
+            <table id="orders-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Tgl Pesanan</th>
+                        <th>No. Order</th>
+                        <th>Total Belanja</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-body">
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="assets/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if(!requireAuth('user')) return;
+            checkAuthStatus();
+            fetchOrders();
+        });
+
+        async function fetchOrders() {
+            try {
+                const response = await apiRequest('/orders/my');
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('orders-table').style.display = 'table';
+                
+                const tbody = document.getElementById('orders-body');
+                if (response.data && response.data.length > 0) {
+                    let html = '';
+                    response.data.forEach(order => {
+                        let actionBtn = '';
+                        if (order.status === 'pending') {
+                            actionBtn += `<button class="btn btn-primary btn-small" onclick="paySnap('${order.snap_token}')" style="margin-right:5px;">Bayar</button>`;
+                            actionBtn += `<button class="btn btn-danger btn-small" onclick="cancelOrder(${order.id})">Batalkan</button>`;
+                        }
+                        
+                        html += `
+                            <tr>
+                                <td>${order.created_at}</td>
+                                <td>${order.order_number}</td>
+                                <td>Rp ${formatRupiah(order.total_amount)}</td>
+                                <td><span class="status-badge status-${order.status}">${order.status_label || order.status}</span></td>
+                                <td>${actionBtn || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">Belum ada pesanan.</td></tr>';
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                const err = document.getElementById('error-msg');
+                err.style.display = 'block';
+                err.textContent = error.message;
+            }
+        }
+
+        function paySnap(token) {
+            if (!token) return Swal.fire('Error', 'Token tidak valid.', 'error');
+            window.snap.pay(token, {
+                onSuccess: () => window.location.reload(),
+                onPending: () => window.location.reload(),
+                onError: () => Swal.fire('Error', 'Pembayaran gagal!', 'error'),
+                onClose: () => window.location.reload(),
+            });
+        }
+
+        function cancelOrder(id) {
+            Swal.fire({
+                title: 'Batalkan Pesanan?',
+                text: "Anda yakin ingin membatalkan pesanan ini?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Batalkan!'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await apiRequest(`/orders/${id}/cancel`, 'POST');
+                        Swal.fire('Dibatalkan!', 'Pesanan berhasil dibatalkan.', 'success');
+                        fetchOrders();
+                    } catch(e) {
+                        Swal.fire('Gagal', e.message, 'error');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

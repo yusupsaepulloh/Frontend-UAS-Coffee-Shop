@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Cuplizz Coffee</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <div id="sidebar-container"></div>
+        
+        <div class="admin-content">
+            <h2>Dashboard Utama</h2>
+            <p>Selamat datang di panel admin Cuplizz Coffee.</p>
+            <br>
+            
+            <div id="loading" class="text-center">Memuat statistik...</div>
+            <div id="error-msg" class="text-error" style="display:none;"></div>
+            
+            <div class="dashboard-cards" id="dash-cards" style="display:none;">
+                <div class="card">
+                    <h3>Total Produk</h3>
+                    <div class="val" id="val-products">0</div>
+                </div>
+                <div class="card">
+                    <h3>Total Pesanan</h3>
+                    <div class="val" id="val-orders">0</div>
+                </div>
+                <div class="card">
+                    <h3>Pesanan Hari Ini</h3>
+                    <div class="val" id="val-today">0</div>
+                </div>
+                <div class="card">
+                    <h3>Total Revenue</h3>
+                    <div class="val" id="val-revenue">Rp 0</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 40px;">
+                <h3>Pesanan Tertunda (Pending / Paid / Processing)</h3>
+                <a href="orders.html" class="btn btn-primary btn-small" style="display:inline-block; margin-top:10px;">Kelola Semua Pesanan &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if(!requireAuth('admin')) return;
+            document.getElementById('sidebar-container').innerHTML = buildAdminSidebar();
+            fetchDashboard();
+        });
+
+        async function fetchDashboard() {
+            try {
+                const response = await apiRequest('/admin/dashboard');
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dash-cards').style.display = 'grid';
+                
+                const d = response.data;
+                document.getElementById('val-products').textContent = d.total_products;
+                document.getElementById('val-orders').textContent = d.total_orders;
+                document.getElementById('val-today').textContent = d.today_orders;
+                document.getElementById('val-revenue').textContent = 'Rp ' + formatRupiah(d.total_revenue);
+                
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                const err = document.getElementById('error-msg');
+                err.style.display = 'block';
+                err.textContent = error.message;
+            }
+        }
+    </script>
+</body>
+</html>
