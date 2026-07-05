@@ -149,7 +149,7 @@ function checkAuthStatus() {
 function requireAuth(role = null) {
     const user = getUserData();
     if (!user) {
-        window.location.href = '/login.html';
+        window.location.href = 'login.html';
         return false;
     }
     if (role && user.role !== role) {
@@ -159,7 +159,7 @@ function requireAuth(role = null) {
             text: 'Anda tidak memiliki izin untuk halaman ini.',
             confirmButtonColor: '#d2691e'
         }).then(() => {
-            window.location.href = '/index.html';
+            window.location.href = 'index.html';
         });
         return false;
     }
