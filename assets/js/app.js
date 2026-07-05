@@ -33,7 +33,10 @@ async function apiRequest(endpoint, method = 'GET', data = null, isFormData = fa
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+const response = await fetch(`${API_BASE_URL}/categories`);
+
+const text = await response.text();
+console.log(text);
         
         // Handle no content
         if (response.status === 204) return true;
