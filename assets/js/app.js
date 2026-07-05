@@ -1,6 +1,6 @@
 
 // Konfigurasi API dan Midtrans
-const API_BASE_URL = 'https://cuplizz-space.my.id/api';
+const API_BASE_URL = '/api';
 const MIDTRANS_CLIENT_KEY = 'Mid-client-JhctP4gCknrcRODU'; // TODO: Update with real Midtrans client key if needed
 
 /**
